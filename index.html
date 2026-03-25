@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WOLFFY | The Ghost of You</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind Config for Spotify Theme -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        spotify: {
+                            base: '#121212',
+                            surface: '#181818',
+                            elevated: '#282828',
+                            green: '#1DB954',
+                            greenHover: '#1ed760',
+                            text: '#FFFFFF',
+                            subtext: '#B3B3B3'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #121212;
+            color: #FFFFFF;
+            overflow: hidden; /* Prevent body scroll, manage internally */
+            user-select: none;
+        }
+
+        /* Glassmorphism & Borders */
+        .glass {
+            background: rgba(24, 24, 24, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .glass-card {
+            background: #181818;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+        
+        .glass-card:hover {
+            background: #282828;
+        }
+
+        /* Animations */
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pulse-red { animation: pulseRed 0.5s ease-out; }
+        @keyframes pulseRed {
+            0% { background-color: #ef4444; }
+            100% { background-color: #121212; }
+        }
+
+        .pulse-green { animation: pulseGreen 0.5s ease-out; }
+        @keyframes pulseGreen {
+            0% { background-color: #1DB954; }
+            100% { background-color: #121212; }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #121212; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #1DB954;
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 0 15px rgba(29, 185, 84, 0.6);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #535353;
+            border-radius: 3px;
+        }
+
+        /* 3D Flip Cards */
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .card-inner { transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); }
+        .flipped .card-inner { transform: rotateY(180deg); }
+
+        /* Concept Pillars */
+        .pillar { transition: all 0.5s cubic-bezier(0.4, 0.2, 0.2, 1); cursor: pointer; }
+        .pillar-expanded { flex: 4; background: #282828 !important; border-color: #1DB954 !important;}
+        .pillar-collapsed { flex: 1; opacity: 0.6; }
+        .pillar-collapsed:hover { opacity: 0.9; }
+
+        /* Sync Lyrics */
+        .lyric-line { transition: all 0.2s; cursor: pointer; opacity: 0.5; }
+        .lyric-line:hover { opacity: 1; color: #FFFFFF; transform: translateX(10px); }
+        .lyric-active { opacity: 1; color: #1DB954; font-weight: 800; transform: scale(1.05) translateX(10px); border-left-color: #1DB954 !important; }
+
+        /* Video Glow */
+        .video-glow {
+            box-shadow: 0 0 50px rgba(255, 255, 255, 0.05);
+        }
+
+        /* Drag and Drop Styles */
+        .draggable-word { cursor: grab; }
+        .draggable-word:active { cursor: grabbing; opacity: 0.7; transform: scale(0.95); }
+        .bucket-over { border-color: #1DB954 !important; background-color: #202020 !important; }
+    </style>
+</head>
+<body class="flex flex-col h-screen w-screen text-spotify-text text-sm">
+
+    <!-- TOP NAV -->
+    <header class="glass fixed top-0 w-full z-50 h-16 flex items-center justify-between px-6">
+        <div class="flex items-center gap-4">
+            <button onclick="app.goHome()" class="text-spotify-subtext hover:text-white transition rounded-full p-2 bg-black/40 hover:bg-black/80">
+                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            </button>
+            <div class="flex items-center gap-2">
+                <i data-lucide="speaker" class="text-spotify-green w-6 h-6"></i>
+                <span class="font-bold tracking-widest text-sm">WOLFFY</span>
+            </div>
+        </div>
+        
+        <!-- Status Bar -->
+        <div id="status-bar" class="hidden items-center gap-6 font-semibold text-xs bg-[#181818] px-4 py-2 rounded-full border border-[#282828]">
+            <div class="flex items-center gap-2">
+                <i data-lucide="heart" class="text-red-500 w-4 h-4 fill-red-500"></i>
+                <span id="hp-display" class="text-white">100 HP</span>
+            </div>
+            <div class="w-px h-4 bg-[#3E3E3E]"></div>
+            <div class="flex items-center gap-2">
+                <i data-lucide="zap" class="text-spotify-green w-4 h-4 fill-spotify-green"></i>
+                <span id="xp-display" class="text-white">0 XP</span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button class="text-spotify-subtext hover:text-white transition">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main id="main-container" class="flex-1 mt-16 mb-24 overflow-y-auto relative p-6 md:p-12 flex justify-center items-center">
+        <!-- Dynamic Content Injected Here -->
+    </main>
+
+    <!-- PLAYER BAR (BOTTOM) -->
+    <footer class="glass fixed bottom-0 w-full h-24 flex items-center justify-between px-4 md:px-8 z-50">
+        <!-- Track Info -->
+        <div class="flex items-center gap-4 w-1/3">
+            <div class="w-16 h-16 bg-spotify-elevated rounded-md shadow-lg overflow-hidden relative group border border-[#282828]">
+                <div class="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center cursor-pointer backdrop-blur-sm">
+                    <i data-lucide="maximize-2" class="w-6 h-6 text-white"></i>
+                </div>
+                <div class="w-full h-full bg-gradient-to-br from-gray-700 to-black flex items-center justify-center">
+                    <i data-lucide="ghost" class="w-8 h-8 text-spotify-subtext opacity-50"></i>
+                </div>
+            </div>
+            <div class="flex flex-col">
+                <span class="font-bold text-white text-base truncate tracking-tight" id="player-title">The Ghost of You</span>
+                <span class="text-xs text-spotify-subtext truncate mt-0.5" id="player-artist">My Chemical Romance • Select Level</span>
+            </div>
+        </div>
+
+        <!-- Controls & Progress -->
+        <div class="flex flex-col items-center justify-center w-1/3 max-2xl gap-3">
+            <div class="flex items-center gap-8">
+                <button onclick="app.prevSlide()" class="text-spotify-subtext hover:text-white transition" id="btn-prev">
+                    <i data-lucide="skip-back" class="w-5 h-5 fill-current"></i>
+                </button>
+                <button onclick="app.togglePlay()" class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition transform shadow-lg">
+                    <i data-lucide="play" class="w-5 h-5 fill-current ml-1" id="play-icon"></i>
+                </button>
+                <button onclick="app.nextSlide()" class="text-spotify-subtext hover:text-white transition" id="btn-next">
+                    <i data-lucide="skip-forward" class="w-5 h-5 fill-current"></i>
+                </button>
+            </div>
+            <div class="flex items-center gap-3 w-full text-[11px] font-medium text-spotify-subtext">
+                <span id="progress-current" class="w-8 text-right">0</span>
+                <div class="h-1.5 flex-1 bg-[#535353] rounded-full overflow-hidden relative group cursor-pointer">
+                    <div id="progress-bar-fill" class="h-full bg-white group-hover:bg-spotify-green transition-all duration-300 w-0 relative">
+                        <div class="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 shadow-md"></div>
+                    </div>
+                </div>
+                <span id="progress-total" class="w-8">0</span>
+            </div>
+        </div>
+
+        <!-- Extra Actions -->
+        <div class="flex items-center justify-end w-1/3 gap-5">
+            <button class="text-spotify-subtext hover:text-white transition"><i data-lucide="mic-2" class="w-5 h-5"></i></button>
+            <button class="text-spotify-subtext hover:text-white transition"><i data-lucide="layers" class="w-5 h-5"></i></button>
+            <button class="text-spotify-subtext hover:text-white transition"><i data-lucide="volume-2" class="w-5 h-5"></i></button>
+        </div>
+    </footer>
+
+    <!-- LOGIC & DATA -->
+    <script>
+        // --- DATA DOMAIN (34 SLIDES A1+ & A2) ---
+        const lessons = {
+            A1: [
+                { type: 'bGuide', title: 'Teacher Briefing', content: 'Target: "Can/Can\'t", "Always/Never", and emotional expression. This is a 34-slide immersive mission. Do not let the student skip speaking tasks.', speakingStarter: 'Teacher: Ask the student about a song that gives them goosebumps.' },
+                { type: 'bCover', title: 'The Ghost of You (A1+)', subtitle: 'Survival & Feelings Edition', tags: ['Vocabulary', 'Can / Cannot', 'Emotions', 'Video Analysis'] },
+                { type: 'bSoundcheck', emoji: '❤️‍🩹', question: 'Is it easy to forget someone important?', speakingStarter: 'I think it is (easy/hard) because...' },
+                
+                // Exercise 2: Categorization (Drag/Sort)
+                { type: 'bCategorization', title: 'Sort the Feelings', items: ['Smile', 'Wait forever', 'Die', 'Together', 'Forget', 'Alone'], buckets: ['Positive / Safe', 'Negative / Sad'], mapping: [0, 1, 1, 0, 1, 1], speakingStarter: 'Drag the words to the correct boxes.' },
+                
+                // Pre-Teaching Spotify Style (Before Video) - Now with Follow-ups!
+                { type: 'bLyricsSync', title: 'Pre-Teaching: The Core Message', lyrics: [
+                    { text: "I never said I'd lie and wait forever", focus: "Never = 0% of the time", hook: "He is making a very strong promise about what he will NOT do.", followUp: "Why do you think people promise to wait forever?", starter: "People say they will wait forever because..." },
+                    { text: "I can't always just forget her", focus: "Can't = Cannot (No Ability)", hook: "He doesn't have the mental power to delete the memory.", followUp: "Is forgetting a choice?", starter: "I think forgetting is (not) a choice because..." },
+                    { text: "But she could try", focus: "Could = Possibility", hook: "It is possible for her, but impossible for him.", followUp: "Have you ever tried to do something impossible?", starter: "Once, I tried to..." }
+                ], speakingStarter: 'Click the green lines to reveal the grammar and questions.' },
+                
+                { type: 'bLogicGrammar', title: 'Grammar: Can vs Cannot', rules: [{ rule: 'I Can (Ability)', desc: 'I have the power to do it. "I can remember her smile."' }, { rule: 'I Can\'t (Inability)', desc: 'I do NOT have the power. "I can\'t forget her."' }], speakingStarter: 'Tell me two things you CAN do, and two things you CAN\'T do.' },
+                { type: 'bRhythmCheck', question: 'Complete the lyric: "I ______ always just forget her."', options: ['can', 'cannot (can\'t)', 'am not', 'will'], correct: 1, successMsg: 'Perfect! Can\'t expresses inability.', speakingStarter: 'Pronounce "can\'t" with a strong T sound.' },
+                
+                // PreWatch & Video
+                { type: 'bSoundcheck', emoji: '🍿', question: 'Pre-Video: Have you ever watched a music video that felt like a movie?', speakingStarter: 'Yes, I remember the video for... / No, usually they are...' },
+                { type: 'bRhythmCheck', question: 'Prediction: Based on the title "The Ghost of You", what do you think the video will show?', options: ['A literal ghost', 'Memories of the past', 'A happy ending', 'A comedy scene'], correct: 1, successMsg: 'Good guess! Let\'s see if you are right.', speakingStarter: 'I chose this option because...' },
+                { type: 'bPreWatch', title: 'The Mystery of the Video', task: 'We are about to watch the official video for "The Ghost of You". It tells a story about soldiers. Look at their faces. Do they look happy or scared?', speakingStarter: 'I expect the video to be (happy/sad/scary).' },
+                { type: 'bVideo', title: 'The Ghost of You - Official Video', url: 'https://www.youtube.com/embed/uCUpvTMis-Y?autoplay=0', task: 'Watch the first 3 minutes. Observe the transition from the dance to the battlefield.' },
+                { type: 'bRhythmCheck', question: 'Post-Video: How did the mood change when they hit the water?', options: ['It got happier', 'It became chaotic and scary', 'It stayed the same', 'They started dancing again'], correct: 1, successMsg: 'Exactly. The contrast is huge.', speakingStarter: 'The biggest difference between the bar and the water was...' },
+                { type: 'bSoundcheck', emoji: '🎬', question: 'What was your first reaction to the video?', speakingStarter: 'When I saw the video, I felt...' },
+                { type: 'bSoundcheck', emoji: '😲', question: 'What was the most surprising moment in these first 3 minutes?', speakingStarter: 'I was really surprised when...' },
+                
+                // Post Video Clickable Elements & Follow-up Qs
+                { type: 'bConceptPillars', title: 'Video Elements', pillars: [
+                    { title: 'The Dance', text: 'A happy memory before the war started.', q: 'Why do you think the video starts with a party?', start: 'I think it starts with a party to show...' },
+                    { title: 'The Water', text: 'The chaotic and scary reality of the battlefield.', q: 'How did you feel when they hit the water?', start: 'When they hit the water, I felt...' },
+                    { title: 'The Look', text: 'The moment the singer sees his friend fall.', q: 'What was the singer thinking in that moment?', start: 'He was probably thinking...' }
+                ]},
+                
+                { type: 'bCategorization', title: 'Sort the Reality', items: ['Music Playing', 'Gunfire', 'Smiling Faces', 'Screaming', 'Dancing'], buckets: ['The Memory (Before)', 'The Reality (After)'], mapping: [0, 1, 0, 1, 0], speakingStarter: 'Drag the scenes to the correct timeline.' },
+                
+                // Post-Video Lyrics Analysis
+                { type: 'bLyricsSync', title: 'Post-Video Analysis: The End', lyrics: [
+                    { text: "At the end of the world or the last thing I see", focus: "Extreme limits", hook: "He is talking about the final moments of life on the battlefield.", followUp: "What is the 'end of the world' for these soldiers?", starter: "For them, the end of the world is..." },
+                    { text: "You are never coming home", focus: "Permanent Absence", hook: "Present continuous used for a permanent, tragic future.", followUp: "How does the melody change when he sings this?", starter: "The melody sounds more (sad/aggressive) because..." },
+                    { text: "Never coming home", focus: "Repetition", hook: "Repeating 'never' shows he is finally accepting the sad truth.", followUp: "Why do we repeat things when we are sad?", starter: "We repeat things because we want to..." }
+                ], speakingStarter: 'Click the lyrics to see the deep analysis.' },
+                
+                { type: 'bSoundcheck', emoji: '🏠', question: 'What does "home" represent in this song?', speakingStarter: 'In this song, "home" means...' },
+                { type: 'bRhythmCheck', question: 'Choose the correct word: "At the ______ of the world..."', options: ['start', 'middle', 'end', 'top'], correct: 2, successMsg: 'Nice! The end of the world represents an extreme situation.', speakingStarter: 'What would you do at the end of the world?' },
+                { type: 'bRhythmCheck', question: 'Fill the gap: "...or the last ______ I see."', options: ['person', 'thing', 'car', 'animal'], correct: 1, successMsg: 'Good job! "The last thing I see" means right before dying.', speakingStarter: 'Read the full line out loud.' },
+                
+                { type: 'bDecisionStand', title: 'The Truth Slider', question: 'Is it better to accept a sad truth quickly, or keep hoping?', labels: ['Accept Truth (Move on)', 'Keep Hoping (Wait)'], speakingStarter: 'Defend your position. Why is your choice better?' },
+                
+                // Clickable Vocab follow-ups
+                { type: 'bBehindLyrics', words: [
+                    { concept: 'Tell', icon: 'message-circle', rarity: 'Common', def: 'To give information to someone.', q: 'If you had one last minute, who would you tell a secret to?', start: 'I would tell my secret to...' },
+                    { concept: 'Feel', icon: 'heart', rarity: 'Common', def: 'To experience an emotion.', q: 'What makes you feel alive?', start: 'I feel most alive when...' },
+                    { concept: 'Remember', icon: 'history', rarity: 'Epic', def: 'To have a memory of something past.', q: 'What is your oldest memory?', start: 'I remember when I was...' }
+                ]},
+                
+                { type: 'bLogicGrammar', title: 'Emphasizing with EVER', rules: [{ rule: 'Never', desc: 'Zero times. "I never lie."' }, { rule: 'Never EVER', desc: 'Absolutely zero times. Adds dramatic emotion! "I will never EVER leave you."' }], speakingStarter: 'Tell me something you will NEVER EVER eat.' },
+                
+                { type: 'bLyricsSync', title: 'Analyzing the Climax', lyrics: [
+                    { text: "And all the things that you never ever told me", focus: "Regret", hook: "He is sad about the words that were not said before the tragedy.", followUp: "Is it worse to say something bad, or say nothing at all?", starter: "I think it is worse to..." },
+                    { text: "Ever get the feeling that you're never all alone?", focus: "The Ghost", hook: "The feeling of a presence, even when nobody is there.", followUp: "Do memories feel like ghosts?", starter: "Yes, memories feel like ghosts because..." },
+                    { text: "At the top of my lungs in my arms, she dies", focus: "The Climax", hook: "Screaming as loud as possible in absolute despair.", followUp: "Why did the music get so heavy here?", starter: "The music got heavy to show his..." }
+                ], speakingStarter: 'Click the lines to analyze the final moments.' },
+                
+                { type: 'bRhythmCheck', question: 'Lyric segment: "And all the things that you never ever ______ me."', options: ['told', 'said', 'spoke', 'talked'], correct: 0, successMsg: 'Correct! "Told me" is the past of tell someone.', speakingStarter: 'What is the difference between tell and say?' },
+                { type: 'bRhythmCheck', question: 'Lyric segment: "Ever get the ______ that you\'re never all alone?"', options: ['idea', 'feeling', 'thought', 'moment'], correct: 1, successMsg: 'Awesome! "Get the feeling" means to have an intuition.', speakingStarter: 'Do you ever get the feeling someone is watching you?' },
+                { type: 'bRhythmCheck', question: 'Lyric segment: "At the top of my ______ in my arms, she dies..."', options: ['voice', 'lungs', 'head', 'mind'], correct: 1, successMsg: '"Top of my lungs" means screaming very loudly.', speakingStarter: 'When was the last time you yelled at the top of your lungs?' },
+                
+                { type: 'bCategorization', title: 'Sort by Frequency', items: ['I brush my teeth', 'I go to the moon', 'I eat food', 'I see a ghost', 'I sleep at night'], buckets: ['Always / Every Day', 'Never / Impossible'], mapping: [0, 1, 0, 1, 0], speakingStarter: 'Drag the habits to their correct frequency.' },
+                
+                { type: 'bDecisionStand', title: 'Emotional Intensity', question: 'How intense is the lyric "At the top of my lungs, she dies"?', labels: ['0% (Calm)', '100% (Desperate)'], speakingStarter: 'Why is this line the climax of the song?' },
+                
+                // Deep Conversation Block (End of mission)
+                { type: 'bSoundcheck', emoji: '🗣️', question: 'Do you think talking about pain makes it better or worse?', speakingStarter: 'I think it makes it (better/worse) because...' },
+                { type: 'bConceptPillars', title: 'Final Thoughts', pillars: [
+                    { title: 'The Past', text: 'Things that already happened.', q: 'Can we change the past?', start: 'No, we cannot change the past, but we can...' },
+                    { title: 'The Present', text: 'Right now.', q: 'What is important to do right now?', start: 'Right now, it is important to...' },
+                    { title: 'The Future', text: 'What will happen.', q: 'Are you afraid of the future?', start: 'I am (not) afraid of the future because...' }
+                ]},
+                { type: 'bRhythmCheck', question: 'Final Test: "You are ______ coming home."', options: ['always', 'sometimes', 'never', 'usually'], correct: 2, successMsg: 'Critical Hit! Never = 0% chance.', speakingStarter: 'Say it with feeling.' },
+                { type: 'bDecisionStand', title: 'The Memory Slider', question: 'Is it better to remember everything, or forget the painful things?', labels: ['Remember All', 'Forget Pain'], speakingStarter: 'Why did you slide it that way?' },
+                { type: 'bSoundcheck', emoji: '🕯️', question: 'If you had to summarize "The Ghost of You" in one word, what would it be?', speakingStarter: 'My word is _______ because...' },
+                { type: 'bSoundcheck', emoji: '🎸', question: 'Did this song change the way you see memories?', speakingStarter: 'Yes/No, it made me realize that...' },
+                { type: 'bWrap', title: 'Mission Complete', msg: 'You have mastered basic emotional statements and the power of NEVER. Track cleared.', speakingStarter: 'Summarize your experience with this song today.' }
+            ],
+            
+            // A2 Array similarly expanded to maintain 30+ slides of density
+            A2: [
+                { type: 'bGuide', title: 'Mission Briefing', content: 'Target: Modals of Regret (Could, Should), Metaphors, and complex emotions. This is a 34-slide psychological deep dive. Push the student to justify their opinions.', speakingStarter: 'Teacher: Ask the student if they believe in "what if" scenarios.' },
+                { type: 'bCover', title: 'The Ghost of You (A2)', subtitle: 'Regret & Metaphor Edition', tags: ['Could/Should', 'Metaphors', 'Critical Thinking', 'War Context'] },
+                { type: 'bSoundcheck', emoji: '🕰️', question: 'If you had a time machine, would you change a past mistake?', speakingStarter: 'If I had a time machine, I (would/would not) change...' },
+                { type: 'bSoundcheck', emoji: '💭', question: 'What is the difference between guilt and regret?', speakingStarter: 'I think guilt is when you..., but regret is when...' },
+
+                { type: 'bCategorization', title: 'Sort the Concepts', items: ['I should apologize', 'I can\'t change it', 'What if I tried?', 'It is over', 'Could I save them?'], buckets: ['Alternative Reality (What if)', 'Harsh Reality (Fact)'], mapping: [0, 1, 0, 1, 0], speakingStarter: 'Drag the phrases to classify them as "What if" or "Fact".' },
+
+                { type: 'bConceptPillars', title: 'The Trinity of Regret', pillars: [
+                    { title: 'Could', text: 'Questions about ability or possibility in the past.', q: 'Is it healthy to ask "Could I have done more?"', start: 'Asking "Could I" is...' },
+                    { title: 'Should', text: 'Questions about moral duty or the "right" choice.', q: 'When was the last time you thought "I should have..."?', start: 'I recently thought I should have...' },
+                    { title: 'Would', text: 'Imagining a completely different outcome.', q: 'Would you be different if you lived 100 years ago?', start: 'If I lived 100 years ago, I would...' }
+                ]},
+
+                { type: 'bSoundcheck', emoji: '🎞️', question: 'Pre-Video: Why do artists sometimes use war as a metaphor in songs about relationships?', speakingStarter: 'I think war is a good metaphor because...' },
+                { type: 'bPreWatch', title: 'Historical Context', task: 'The music video portrays the D-Day invasion of World War II. It\'s a brutal contrast to the band playing in a safe bar. Pay attention to the fear in their eyes before the doors open.', speakingStarter: 'I think soldiers in that moment feel...' },
+                { type: 'bVideo', title: 'The Ghost of You - The Journey', url: 'https://www.youtube.com/embed/uCUpvTMis-Y?start=0&end=105&autoplay=0', task: 'Watch up to 1:45. Look at the contrast between the dance and the boats.' },
+                { type: 'bRhythmCheck', question: 'Post-Video: What was the main contrast shown in this first part?', options: ['Silence vs Noise', 'Safety vs Extreme Danger', 'Day vs Night', 'Past vs Future'], correct: 1, successMsg: 'Spot on. The contrast highlights the tragedy.', speakingStarter: 'The contrast made me feel...' },
+                { type: 'bSoundcheck', emoji: '🌊', question: 'How did the director build tension in the boats?', speakingStarter: 'The director built tension by showing...' },
+
+                { type: 'bLyricsSync', title: 'The Brink of Disaster', lyrics: [
+                    { text: "At the end of the world or the last thing I see", focus: "Facing Mortality", hook: "He is acknowledging that this might be his final moment.", followUp: "What do people think about in their final moments?", starter: "In their final moments, people probably think about..." },
+                    { text: "You are never coming home", focus: "Absolute Certainty", hook: "The realization that a loss is permanent.", followUp: "How long does it take to accept 'never'?", starter: "Accepting 'never' takes a long time because..." }
+                ], speakingStarter: 'Click the lines to explore the tension before the battle.' },
+
+                { type: 'bDecisionStand', title: 'The Fear Slider', question: 'In extreme situations, is fear a weakness or a survival tool?', labels: ['100% Weakness', '100% Survival Tool'], speakingStarter: 'Explain your position on fear.' },
+
+                { type: 'bDecisionStand', title: 'Anticipation Slider', question: 'Pre-Video: How prepared are you to watch a tragic, emotional moment right now?', labels: ['Not Ready At All', 'Completely Ready'], speakingStarter: 'I put the slider here because...' },
+                { type: 'bVideo', title: 'The Ghost of You - The Tragedy', url: 'https://www.youtube.com/embed/uCUpvTMis-Y?start=105&end=180&autoplay=0', task: 'Watch the ambush. Focus on the singer (Gerard) when his brother (Mikey) gets hit.' },
+                { type: 'bSoundcheck', emoji: '🎬', question: 'Post-Video: If you were the director, would you have shown the tragedy differently?', speakingStarter: 'If I were the director, I would (keep it the same / change it by)...' },
+                { type: 'bSoundcheck', emoji: '💔', question: 'What was the most impactful moment of that scene?', speakingStarter: 'The most impactful moment was when...' },
+
+                { type: 'bLyricsSync', title: 'The Burden of Survival', lyrics: [
+                    { text: "Could I? Should I?", focus: "Survivor's Guilt", hook: "Asking if he had the power (could) or the duty (should) to save his brother.", followUp: "Why do survivors feel guilty?", starter: "Survivors feel guilty because they think..." },
+                    { text: "And all the things that you never ever told me", focus: "Lost Conversations", hook: "The pain of unfinished business.", followUp: "Why do we wait to say important things?", starter: "We wait to say important things because..." }
+                ], speakingStarter: 'Click the lyrics to analyze survivor\'s guilt.' },
+
+                { type: 'bLogicGrammar', title: 'Could vs Should', rules: [
+                    { rule: 'Could (Possibility)', desc: 'Focuses on the options available. "Could I stop it?" (Was it physically possible?)' },
+                    { rule: 'Should (Obligation)', desc: 'Focuses on what was right or expected. "Should I jump in front of him?"' }
+                ], speakingStarter: 'Give an example of a "Could" question and a "Should" question.' },
+
+                { type: 'bRhythmCheck', question: 'Which modal expresses a moral obligation or duty?', options: ['Can', 'Could', 'Should', 'Would'], correct: 2, successMsg: 'Correct! "Should" implies doing the right thing.', speakingStarter: 'What is something you SHOULD do everyday?' },
+                { type: 'bRhythmCheck', question: 'Which modal asks about past physical ability or possibility?', options: ['Must', 'Should', 'Will', 'Could'], correct: 3, successMsg: 'Spot on! "Could" questions if it was possible.', speakingStarter: 'What is something you COULD do when you were 10?' },
+
+                { type: 'bDecisionStand', title: 'The Blame Slider', question: 'How much is the singer to blame for what happened?', labels: ['0% (Not his fault)', '100% (His fault)'], speakingStarter: 'Why did you slide it there? Defend your answer.' },
+
+                { type: 'bBehindLyrics', words: [
+                    { concept: 'Survive', icon: 'shield', rarity: 'Rare', def: 'To continue to live or exist, especially in spite of danger.', q: 'What is the key to surviving a crisis?', start: 'To survive a crisis, you must...' },
+                    { concept: 'Sacrifice', icon: 'heart', rarity: 'Epic', def: 'Giving up something valued for the sake of something else.', q: 'What is the biggest sacrifice a person can make?', start: 'The biggest sacrifice is...' },
+                    { concept: 'Guilt', icon: 'frown', rarity: 'Common', def: 'A feeling of having done wrong or failed in an obligation.', q: 'How do you overcome guilt?', start: 'To overcome guilt, you have to...' }
+                ]},
+
+                { type: 'bCategorization', title: 'Sort the Reality', items: ['The enemy\'s actions', 'My own feelings', 'The past', 'My reaction today', 'The outcome of the war'], buckets: ['Things I CAN Control', 'Things I CANNOT Control'], mapping: [1, 0, 1, 0, 1], speakingStarter: 'Drag the items. Why can\'t we control the past?' },
+
+                { type: 'bConceptPillars', title: 'Metaphors of Pain', pillars: [
+                    { title: 'Wound', text: 'An active, fresh injury. It hurts right now.', q: 'How do you treat an emotional wound?', start: 'To treat an emotional wound, you should...' },
+                    { title: 'Scar', text: 'A healed wound. It doesn\'t hurt, but it leaves a mark permanently.', q: 'Do you hide your scars or show them?', start: 'I think scars should be...' },
+                    { title: 'Ghost', text: 'A memory that refuses to die and follows you.', q: 'What is the difference between a memory and a ghost?', start: 'A memory is..., but a ghost is...' }
+                ]},
+
+                { type: 'bLyricsSync', title: 'The Haunting', lyrics: [
+                    { text: "And all the smiles that are ever gonna haunt me", focus: "Juxtaposition", hook: "Usually, nightmares haunt us. Here, happy memories are the nightmares.", followUp: "Why do happy memories hurt after a loss?", starter: "Happy memories hurt because..." },
+                    { text: "And all the wounds that are ever gonna scar me", focus: "Future Certainty", hook: "He knows the pain will heal, but the mark will remain forever.", followUp: "Is a scar a sign of weakness or strength?", starter: "A scar is a sign of (strength/weakness) because..." },
+                    { text: "For all the ghosts that are never gonna catch me", focus: "Running Away", hook: "He survives, but he spends his life running from the past.", followUp: "Can you run from a ghost?", starter: "You (can/cannot) run from a ghost because..." }
+                ], speakingStarter: 'Click to explore the dark metaphors of the song.' },
+
+                { type: 'bRhythmCheck', question: 'Complete the lyric: "And all the smiles that are ever gonna ______ me."', options: ['haunt', 'help', 'heal', 'hurt'], correct: 0, successMsg: 'Spot on! The happy memories are now ghosts.', speakingStarter: 'Use "haunt" in a sentence about a bad movie.' },
+                { type: 'bRhythmCheck', question: 'Complete the lyric: "And all the wounds that are ever gonna ______ me."', options: ['kill', 'scar', 'touch', 'break'], correct: 1, successMsg: 'Correct! A wound leaves a scar.', speakingStarter: 'Do emotional wounds leave scars?' },
+                { type: 'bRhythmCheck', question: 'Complete the lyric: "For all the ghosts that are never gonna ______ me."', options: ['find', 'see', 'catch', 'leave'], correct: 2, successMsg: 'Excellent! He is running from the ghosts.', speakingStarter: 'Are the ghosts real, or are they memories?' },
+
+                { type: 'bDecisionStand', title: 'The Metaphor Slider', question: 'Which is worse: An open wound or a ghost that haunts you?', labels: ['Open Wound', 'Haunting Ghost'], speakingStarter: 'Defend your choice.' },
+
+                { type: 'bRhythmCheck', question: 'Pre-Video: What usually follows a deeply tragic moment in a story?', options: ['Immediate acceptance', 'Despair and screaming', 'Laughter', 'Complete silence'], correct: 1, successMsg: 'Yes. Let\'s watch the aftermath.', speakingStarter: 'In movies, after a tragedy, characters usually...' },
+                { type: 'bVideo', title: 'The Ghost of You - The Aftermath', url: 'https://www.youtube.com/embed/uCUpvTMis-Y?start=180&end=203&autoplay=0', task: 'Watch the final scream. Notice the desperation in his body language.' },
+                { type: 'bSoundcheck', emoji: '🗣️', question: 'Why does he scream "she dies" when the video shows a man dying?', speakingStarter: 'I think he says "she" because...' },
+                { type: 'bSoundcheck', emoji: '🩹', question: 'Post-Video: Did the ending of this video bring closure or just more pain?', speakingStarter: 'For me, the ending brought...' },
+
+                { type: 'bCategorization', title: 'Literal vs Metaphorical', items: ['A soldier getting shot', 'A smile haunting me', 'Bleeding from a cut', 'Ghosts catching me', 'A boat on the water'], buckets: ['Literal (Real)', 'Metaphorical (Poetic)'], mapping: [0, 1, 0, 1, 0], speakingStarter: 'Drag the phrases based on their meaning.' },
+
+                { type: 'bSoundcheck', emoji: '⏳', question: 'Debate: "Time heals all wounds." Do you agree?', speakingStarter: 'I (agree/disagree) with this phrase because...' },
+                { type: 'bSoundcheck', emoji: '🛡️', question: 'Debate: "It is better to forget than to be haunted." True or False?', speakingStarter: 'I think this is (true/false) because...' },
+
+                { type: 'bDecisionStand', title: 'The Final Verdict', question: 'Ultimately, is "The Ghost of You" a song about love or war?', labels: ['100% Love', '100% War'], speakingStarter: 'Explain why you chose this balance.' },
+
+                { type: 'bSoundcheck', emoji: '🎤', question: 'What is your biggest takeaway from this mission?', speakingStarter: 'My biggest takeaway is that...' },
+                { type: 'bWrap', title: 'A2 Track Cleared', msg: 'Outstanding work. You navigated complex metaphors, survivor\'s guilt, and advanced modals of regret. You are truly a Wolf.', speakingStarter: 'Mission accomplished.' }
+            ]
+        };
+
+        // --- STATE MANAGEMENT ---
+        const app = {
+            level: null,
+            trackData: [],
+            currentIndex: 0,
+            hp: 100,
+            xp: 0,
+            isPlaying: false,
+
+            init() {
+                this.renderDashboard();
+                lucide.createIcons();
+            },
+
+            loadLevel(lvl) {
+                this.level = lvl;
+                this.trackData = lessons[lvl];
+                this.currentIndex = 0;
+                this.hp = 100;
+                this.xp = 0;
+                
+                const statusBar = document.getElementById('status-bar');
+                if (statusBar) {
+                    statusBar.classList.remove('hidden');
+                    statusBar.classList.add('flex');
+                }
+                
+                const playerArtist = document.getElementById('player-artist');
+                if (playerArtist) playerArtist.innerText = `My Chemical Romance • Level ${lvl}`;
+                
+                this.updateStatus();
+                this.renderSlide();
+            },
+
+            goHome() {
+                this.level = null;
+                const statusBar = document.getElementById('status-bar');
+                if (statusBar) {
+                    statusBar.classList.add('hidden');
+                    statusBar.classList.remove('flex');
+                }
+                const playerArtist = document.getElementById('player-artist');
+                if (playerArtist) playerArtist.innerText = `My Chemical Romance • Select Level`;
+                
+                const progressCurrent = document.getElementById('progress-current');
+                if (progressCurrent) progressCurrent.innerText = '0';
+                
+                const progressTotal = document.getElementById('progress-total');
+                if (progressTotal) progressTotal.innerText = '0';
+                
+                const progressBarFill = document.getElementById('progress-bar-fill');
+                if (progressBarFill) progressBarFill.style.width = '0%';
+                
+                this.renderDashboard();
+            },
+
+            updateStatus() {
+                const hpDisplay = document.getElementById('hp-display');
+                if (hpDisplay) hpDisplay.innerText = `${this.hp} HP`;
+                
+                const xpDisplay = document.getElementById('xp-display');
+                if (xpDisplay) xpDisplay.innerText = `${this.xp} XP`;
+                
+                if (this.trackData && this.trackData.length > 0) {
+                    const current = this.currentIndex + 1;
+                    const total = this.trackData.length;
+                    
+                    const progressCurrent = document.getElementById('progress-current');
+                    if (progressCurrent) progressCurrent.innerText = current;
+                    
+                    const progressTotal = document.getElementById('progress-total');
+                    if (progressTotal) progressTotal.innerText = total;
+                    
+                    const progressBarFill = document.getElementById('progress-bar-fill');
+                    if (progressBarFill) progressBarFill.style.width = `${(current / total) * 100}%`;
+                }
+            },
+
+            takeDamage(amount) {
+                this.hp = Math.max(0, this.hp - amount);
+                this.updateStatus();
+                const container = document.getElementById('main-container');
+                if (container?.classList) {
+                    container.classList.add('pulse-red');
+                    setTimeout(() => container.classList.remove('pulse-red'), 500);
+                }
+            },
+
+            gainXP(amount) {
+                this.xp += amount;
+                this.updateStatus();
+                const container = document.getElementById('main-container');
+                if (container?.classList) {
+                    container.classList.add('pulse-green');
+                    setTimeout(() => container.classList.remove('pulse-green'), 500);
+                }
+            },
+
+            nextSlide() {
+                if (!this.level || !this.trackData) return;
+                if (this.currentIndex < this.trackData.length - 1) {
+                    this.currentIndex++;
+                    this.renderSlide();
+                }
+            },
+
+            prevSlide() {
+                if (!this.level || !this.trackData) return;
+                if (this.currentIndex > 0) {
+                    this.currentIndex--;
+                    this.renderSlide();
+                }
+            },
+
+            togglePlay() {
+                this.isPlaying = !this.isPlaying;
+                const icon = document.getElementById('play-icon');
+                if (icon) {
+                    if (this.isPlaying) {
+                        icon.setAttribute('data-lucide', 'pause');
+                        icon.classList.remove('ml-1');
+                    } else {
+                        icon.setAttribute('data-lucide', 'play');
+                        icon.classList.add('ml-1');
+                    }
+                }
+                lucide.createIcons();
+            },
+
+            // --- RENDERERS ---
+            renderDashboard() {
+                const html = `
+                    <div class="fade-in max-w-5xl w-full flex flex-col items-center justify-center h-full">
+                        <div class="relative mb-8 group">
+                            <div class="absolute inset-0 bg-spotify-green rounded-full blur-xl opacity-20 group-hover:opacity-40 transition duration-500"></div>
+                            <i data-lucide="disc-3" class="w-20 h-20 text-spotify-green relative z-10"></i>
+                        </div>
+                        <h1 class="text-5xl font-black mb-3 tracking-tight">Select Your Track</h1>
+                        <p class="text-spotify-subtext mb-16 text-lg">Choose your language intensity level.</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+                            <!-- A1+ Card -->
+                            <div onclick="app.loadLevel('A1')" class="glass-card p-8 rounded-2xl cursor-pointer flex flex-col group relative overflow-hidden border border-[#3E3E3E] hover:border-spotify-green transition-all duration-300 transform hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(29,185,84,0.15)]">
+                                <div class="absolute inset-0 bg-gradient-to-br from-spotify-green/10 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
+                                <div class="flex items-center justify-between mb-6 z-10">
+                                    <h2 class="text-3xl font-black text-white">Level A1+</h2>
+                                    <div class="w-12 h-12 rounded-full bg-spotify-green text-black flex items-center justify-center opacity-0 group-hover:opacity-100 transition transform group-hover:scale-110 shadow-lg">
+                                        <i data-lucide="play" class="w-6 h-6 fill-current ml-1"></i>
+                                    </div>
+                                </div>
+                                <p class="text-spotify-subtext z-10 mb-8 text-base leading-relaxed">Focus: Survival, Basic Feelings, Can/Cannot. Includes 34 intensive interactive slides.</p>
+                                <div class="mt-auto flex gap-3 z-10">
+                                    <span class="text-xs font-bold bg-[#282828] text-white px-3 py-1.5 rounded-full border border-[#535353]">Vocabulary</span>
+                                    <span class="text-xs font-bold bg-[#282828] text-white px-3 py-1.5 rounded-full border border-[#535353]">Emotions</span>
+                                </div>
+                            </div>
+
+                            <!-- A2 Card -->
+                            <div onclick="app.loadLevel('A2')" class="glass-card p-8 rounded-2xl cursor-pointer flex flex-col group relative overflow-hidden border border-[#3E3E3E] hover:border-purple-500 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)]">
+                                <div class="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
+                                <div class="flex items-center justify-between mb-6 z-10">
+                                    <h2 class="text-3xl font-black text-white">Level A2</h2>
+                                    <div class="w-12 h-12 rounded-full bg-purple-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition transform group-hover:scale-110 shadow-lg">
+                                        <i data-lucide="play" class="w-6 h-6 fill-current ml-1"></i>
+                                    </div>
+                                </div>
+                                <p class="text-spotify-subtext z-10 mb-8 text-base leading-relaxed">Focus: Modals of Regret, Critical Thinking, Complex Narratives. 30+ slide deep dive.</p>
+                                <div class="mt-auto flex gap-3 z-10">
+                                    <span class="text-xs font-bold bg-[#282828] text-purple-300 px-3 py-1.5 rounded-full border border-purple-500/30">Could / Should</span>
+                                    <span class="text-xs font-bold bg-[#282828] text-purple-300 px-3 py-1.5 rounded-full border border-purple-500/30">Deep Dive</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                const mainContainer = document.getElementById('main-container');
+                if (mainContainer) {
+                    mainContainer.innerHTML = html;
+                    lucide.createIcons();
+                }
+            },
+
+            renderSlide() {
+                this.updateStatus();
+                if (!this.trackData) return;
+                const slide = this.trackData[this.currentIndex];
+                let contentHTML = '';
+
+                switch(slide.type) {
+                    case 'bGuide': contentHTML = this.renderBGuide(slide); break;
+                    case 'bCover': contentHTML = this.renderBCover(slide); break;
+                    case 'bPreWatch': contentHTML = this.renderBPreWatch(slide); break;
+                    case 'bVideo': contentHTML = this.renderBVideo(slide); break;
+                    case 'bSoundcheck': contentHTML = this.renderBSoundcheck(slide); break;
+                    case 'bBehindLyrics': contentHTML = this.renderBBehindLyrics(slide); break;
+                    case 'bLyricsSync': contentHTML = this.renderBLyricsSync(slide); break;
+                    case 'bConceptPillars': contentHTML = this.renderBConceptPillars(slide); break;
+                    case 'bLogicGrammar': contentHTML = this.renderBLogicGrammar(slide); break;
+                    case 'bCategorization': contentHTML = this.renderBCategorization(slide); break;
+                    case 'bRhythmCheck': contentHTML = this.renderBRhythmCheck(slide); break;
+                    case 'bDecisionStand': contentHTML = this.renderBDecisionStand(slide); break;
+                    case 'bWrap': contentHTML = this.renderBWrap(slide); break;
+                    default: contentHTML = `<h1 class="text-2xl">Slide type ${slide.type} not found</h1>`;
+                }
+
+                const mainContainer = document.getElementById('main-container');
+                if (mainContainer) {
+                    mainContainer.innerHTML = `<div class="w-full max-w-6xl fade-in h-full flex flex-col justify-center items-center py-8">${contentHTML}</div>`;
+                    
+                    if (slide.speakingStarter && !['bBehindLyrics', 'bConceptPillars'].includes(slide.type)) {
+                        mainContainer.innerHTML += this.renderSpeakingStarter(slide.speakingStarter);
+                    }
+
+                    lucide.createIcons();
+                }
+            },
+
+            renderSpeakingStarter(text) {
+                return `
+                    <div id="speaking-starter-container" class="fixed bottom-28 left-1/2 transform -translate-x-1/2 w-[95%] max-w-4xl glass border-l-4 border-l-spotify-green p-5 rounded-r-xl shadow-2xl z-40 fade-in">
+                        <div class="flex items-start gap-4">
+                            <div class="bg-spotify-green/20 p-2 rounded-full">
+                                <i data-lucide="mic" class="w-6 h-6 text-spotify-green"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="text-[10px] font-black text-spotify-subtext uppercase tracking-widest mb-1.5">Speaking Starter</h4>
+                                <p id="speaking-starter-text" class="text-base font-bold text-white leading-snug">${text}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderBGuide(data) {
+                return `
+                    <div class="flex flex-col items-center text-center space-y-8 max-w-3xl w-full">
+                        <div class="w-24 h-24 bg-[#282828] rounded-full flex items-center justify-center border-2 border-[#3E3E3E] shadow-xl">
+                            <i data-lucide="glasses" class="w-12 h-12 text-spotify-green"></i>
+                        </div>
+                        <h1 class="text-4xl font-black tracking-tight">${data.title}</h1>
+                        <p class="text-xl text-spotify-subtext leading-relaxed bg-[#181818] p-8 rounded-2xl border border-[#282828]">${data.content}</p>
+                        <button onclick="app.nextSlide()" class="bg-white hover:bg-gray-200 text-black font-black py-4 px-10 rounded-full transition transform hover:scale-105 text-lg mt-8 shadow-lg">
+                            Acknowledge Briefing
+                        </button>
+                    </div>
+                `;
+            },
+
+            renderBCover(data) {
+                return `
+                    <div class="flex flex-col md:flex-row items-center justify-center gap-16 w-full">
+                        <div class="w-72 h-72 md:w-[450px] md:h-[450px] bg-gradient-to-br from-gray-800 via-gray-900 to-black rounded-xl shadow-2xl border border-gray-700 flex items-center justify-center relative overflow-hidden group">
+                            <img src="https://images.unsplash.com/photo-1518063319789-7217e6706b04?auto=format&fit=crop&q=80&w=800" class="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-overlay transition duration-700 group-hover:scale-110">
+                            <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition duration-700"></div>
+                            <div class="z-10 text-center transform group-hover:scale-110 transition duration-500">
+                                <i data-lucide="skull" class="w-24 h-24 text-white/70 mb-4 mx-auto drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"></i>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-start text-left max-w-lg">
+                            <span class="text-xs font-black uppercase tracking-widest text-spotify-subtext mb-3">New Mission Track</span>
+                            <h1 class="text-6xl md:text-8xl font-black mb-2 tracking-tighter leading-none">${data.title.split('(')[0]}</h1>
+                            <h2 class="text-2xl md:text-3xl text-spotify-green font-semibold mb-8">${data.subtitle}</h2>
+                            <div class="flex flex-wrap gap-3 mb-10">
+                                ${data.tags ? data.tags.map(tag => `<span class="bg-[#282828] text-sm font-bold px-4 py-2 rounded-full border border-[#3E3E3E] text-white">${tag}</span>`).join('') : ''}
+                            </div>
+                            <button onclick="app.nextSlide()" class="bg-spotify-green hover:bg-spotify-greenHover text-black font-black py-4 px-12 rounded-full transition transform hover:scale-105 flex items-center gap-3 text-xl shadow-[0_0_20px_rgba(29,185,84,0.4)]">
+                                <i data-lucide="play" class="w-6 h-6 fill-current"></i> Start Track
+                            </button>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderBSoundcheck(data) {
+                return `
+                    <div class="flex flex-col items-center justify-center text-center space-y-10 w-full h-full min-h-[60vh]">
+                        <div class="text-9xl drop-shadow-2xl animate-bounce mb-6">${data.emoji}</div>
+                        <h2 class="text-5xl md:text-6xl font-black max-w-4xl leading-tight tracking-tight">${data.question}</h2>
+                    </div>
+                `;
+            },
+
+            renderBPreWatch(data) {
+                return `
+                    <div class="flex flex-col items-center justify-center text-center space-y-10 w-full h-full min-h-[70vh] relative">
+                        <div class="absolute inset-0 bg-gradient-to-t from-red-900/10 to-transparent pointer-events-none"></div>
+                        <div class="w-32 h-32 bg-red-900/20 rounded-full flex items-center justify-center border-2 border-red-500/40 animate-pulse mb-6 shadow-[0_0_50px_rgba(239,68,68,0.2)] z-10">
+                            <i data-lucide="eye" class="w-16 h-16 text-red-500"></i>
+                        </div>
+                        <span class="text-red-500 font-black tracking-widest uppercase text-sm z-10">Pre-Watch Protocol</span>
+                        <h2 class="text-5xl md:text-7xl font-black leading-tight tracking-tighter z-10">${data.title}</h2>
+                        <div class="bg-[#181818]/90 backdrop-blur-md p-10 rounded-2xl border border-[#282828] shadow-2xl z-10 max-w-4xl w-full">
+                            <p class="text-2xl text-white leading-relaxed font-medium">${data.task}</p>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderBVideo(data) {
+                return `
+                    <div class="flex flex-col items-center justify-center w-full h-full min-h-[75vh] space-y-8">
+                        <div class="w-full flex justify-between items-end mb-2">
+                            <h2 class="text-3xl font-black text-white flex items-center gap-3"><i data-lucide="youtube" class="w-10 h-10 text-red-500"></i> ${data.title}</h2>
+                        </div>
+                        <div class="w-full max-w-6xl video-glow rounded-2xl p-1 bg-[#181818] border border-[#282828]">
+                            <div class="relative w-full pb-[56.25%] h-0 rounded-xl overflow-hidden bg-black">
+                                <iframe src="${data.url}" class="absolute top-0 left-0 w-full h-full" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                        </div>
+                        <div class="glass border-l-4 border-spotify-green p-6 w-full max-w-6xl rounded-r-xl shadow-xl flex items-center gap-6">
+                            <div class="bg-spotify-green/20 p-3 rounded-full hidden md:block">
+                                <i data-lucide="crosshair" class="w-8 h-8 text-spotify-green"></i>
+                            </div>
+                            <div>
+                                <p class="text-spotify-green font-black uppercase text-xs mb-2 tracking-widest">Focus Task</p>
+                                <p class="text-white text-xl font-medium">${data.task}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderBBehindLyrics(data) {
+                window.flipCard = function(el) {
+                    if (el?.classList) {
+                        el.classList.toggle('flipped');
+                    }
+                };
+
+                const cards = data.words ? data.words.map(w => `
+                    <div class="w-full h-96 perspective-1000 cursor-pointer group" onclick="flipCard(this)">
+                        <div class="card-inner w-full h-full relative transform-style-3d rounded-2xl shadow-2xl">
+                            <!-- Front -->
+                            <div class="absolute inset-0 backface-hidden bg-[#181818] border border-[#282828] rounded-2xl flex flex-col items-center justify-center p-8 text-center group-hover:border-[#535353] transition duration-300">
+                                <span class="absolute top-5 right-5 text-[10px] font-black uppercase tracking-widest ${w.rarity==='Epic'?'text-purple-400':(w.rarity==='Rare'?'text-blue-400':'text-spotify-subtext')} bg-[#282828] px-3 py-1.5 rounded-full border border-[#3E3E3E]">
+                                    ${w.rarity}
+                                </span>
+                                <i data-lucide="${w.icon}" class="w-20 h-20 text-spotify-green mb-8 group-hover:scale-110 transition duration-300"></i>
+                                <h3 class="text-4xl font-black mb-4">${w.concept}</h3>
+                                <p class="text-sm font-bold text-spotify-subtext mt-auto bg-black/40 px-4 py-2 rounded-full flex items-center gap-2"><i data-lucide="mouse-pointer-click" class="w-4 h-4"></i> Click to flip</p>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute inset-0 backface-hidden bg-spotify-green rounded-2xl flex flex-col items-center justify-center p-8 text-center rotate-y-180 text-black shadow-[0_0_30px_rgba(29,185,84,0.3)]">
+                                <h4 class="text-xl font-black mb-4 border-b-2 border-black/20 pb-4 w-full leading-snug">${w.def}</h4>
+                                <p class="text-base font-bold italic mb-8 opacity-80">"${w.q}"</p>
+                                <div class="bg-black/10 p-5 rounded-xl w-full text-left border border-black/10">
+                                    <span class="text-[10px] uppercase font-black text-black/60 block mb-2 tracking-widest">Your Turn:</span>
+                                    <span class="text-lg font-black text-black">${w.start}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('') : '';
+
+                return `
+                    <div class="flex flex-col items-center justify-center w-full h-full min-h-[70vh]">
+                        <h2 class="text-4xl font-black mb-12 text-center flex items-center gap-4"><i data-lucide="library" class="w-10 h-10 text-spotify-green"></i> Vocab Relics</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl">
+                            ${cards}
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderBLyricsSync(data) {
+                window.activateLyric = function(index) {
+                    document.querySelectorAll('.lyric-line').forEach(el => el?.classList.remove('lyric-active'));
+                    const activeLine = document.getElementById(`lyric-${index}`);
+                    if (activeLine?.classList) {
+                        activeLine.classList.add('lyric-active');
+                    }
+                    
+                    if (!app.trackData || !app.trackData[app.currentIndex]) return;
+                    const focusData = app.trackData[app.currentIndex].lyrics ? app.trackData[app.currentIndex].lyrics[index] : null;
+                    if (!focusData) return;
+                    
+                    const sidebarFocus = document.getElementById('sidebar-focus');
+                    if (sidebarFocus) sidebarFocus.innerText = focusData.focus;
+                    
+                    const sidebarHook = document.getElementById('sidebar-hook');
+                    if (sidebarHook) sidebarHook.innerText = focusData.hook;
+                    
+                    // Show Follow Up section if it exists
+                    const followUpContainer = document.getElementById('sidebar-followup-container');
+                    const sidebarFollowup = document.getElementById('sidebar-followup');
+                    
+                    if(focusData.followUp && followUpContainer && sidebarFollowup) {
+                        followUpContainer.classList.remove('hidden');
+                        sidebarFollowup.innerText = focusData.followUp;
+                    } else if (followUpContainer) {
+                        followUpContainer.classList.add('hidden');
+                    }
+                    
+                    // Trigger sidebar animation
+                    const sidebar = document.getElementById('lyric-sidebar');
+                    if (sidebar?.classList) {
+                        sidebar.classList.remove('hidden', 'fade-in');
+                        void sidebar.offsetWidth; // trigger reflow
+                        sidebar.classList.add('fade-in');
+                    }
+
+                    // Update Dynamic Speaking Starter
+                    const starterTextEl = document.getElementById('speaking-starter-text');
+                    const starterContainer = document.getElementById('speaking-starter-container');
+                    if (starterTextEl && starterContainer && focusData.starter) {
+                        starterTextEl.innerHTML = focusData.starter;
+                        starterContainer.classList.remove('fade-in');
+                        void starterContainer.offsetWidth; // trigger reflow
+                        starterContainer.classList.add('fade-in');
+                    }
+                };
+
+                const lyricsHTML = data.lyrics ? data.lyrics.map((l, i) => `
+                    <div id="lyric-${i}" class="lyric-line text-3xl md:text-5xl font-black text-[#535353] py-4 pl-6 border-l-4 border-transparent" onclick="activateLyric(${i})">
+                        ${l.text}
+                    </div>
+                `).join('') : '';
+
+                return `
+                    <div class="flex flex-col w-full h-full min-h-[75vh]">
+                        <h2 class="text-3xl font-black mb-8 text-white">${data.title || "Lyrics Sync"}</h2>
+                        <div class="flex flex-col md:flex-row w-full flex-1 gap-12">
+                            <!-- Left: Lyrics -->
+                            <div class="w-full md:w-7/12 flex flex-col justify-center space-y-6 pr-8 border-r border-[#282828] py-8">
+                                ${lyricsHTML}
+                            </div>
+                            <!-- Right: Genius Sidebar -->
+                            <div class="w-full md:w-5/12 flex flex-col justify-center">
+                                <div id="lyric-sidebar" class="hidden bg-[#181818] p-10 rounded-2xl border border-[#282828] shadow-2xl relative overflow-hidden">
+                                    <div class="absolute top-0 left-0 w-2 h-full bg-spotify-green"></div>
+                                    <div class="mb-8">
+                                        <h3 class="text-[10px] uppercase font-black tracking-widest text-spotify-subtext mb-3">Grammar Focus</h3>
+                                        <div id="sidebar-focus" class="text-3xl font-black text-white leading-tight">...</div>
+                                    </div>
+                                    <div class="pt-8 border-t border-[#282828]">
+                                        <h3 class="text-[10px] uppercase font-black tracking-widest text-spotify-subtext mb-3">Usage Logic</h3>
+                                        <div id="sidebar-hook" class="text-lg text-[#B3B3B3] italic leading-relaxed font-medium">...</div>
+                                    </div>
+                                    <!-- Dynamic Follow Up -->
+                                    <div id="sidebar-followup-container" class="hidden pt-8 mt-8 border-t border-[#282828]">
+                                        <h3 class="text-[10px] uppercase font-black tracking-widest text-spotify-green mb-3 flex items-center gap-2"><i data-lucide="message-square" class="w-4 h-4"></i> Follow-up Question</h3>
+                                        <p id="sidebar-followup" class="text-lg text-white font-bold leading-relaxed">...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderBConceptPillars(data) {
+                window.expandPillar = function(index) {
+                    document.querySelectorAll('.pillar').forEach(el => {
+                        el?.classList.remove('pillar-expanded');
+                        el?.classList.add('pillar-collapsed');
+                        const content = el.querySelector('.pillar-content');
+                        if (content?.classList) {
+                            content.classList.add('hidden');
+                        }
+                    });
+                    const target = document.getElementById(`pillar-${index}`);
+                    if (target?.classList) {
+                        target.classList.add('pillar-expanded');
+                        target.classList.remove('pillar-collapsed');
+                        const content = target.querySelector('.pillar-content');
+                        if (content?.classList) {
+                            content.classList.remove('hidden');
+                            content.classList.add('fade-in');
+                        }
+                    }
+                };
+
+                const pillars = data.pillars ? data.pillars.map((p, i) => `
+                    <div id="pillar-${i}" class="pillar ${i===0 ? 'pillar-expanded' : 'pillar-collapsed'} bg-[#181818] border-2 border-[#282828] rounded-2xl flex flex-col justify-end p-8 relative overflow-hidden h-full min-h-[60vh]" onclick="expandPillar(${i})">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-0"></div>
+                        <h2 class="text-4xl md:text-5xl font-black text-white z-10 mb-2 transform -rotate-90 origin-bottom-left absolute left-12 bottom-12 opacity-50 transition-opacity uppercase tracking-widest group-hover:opacity-100 whitespace-nowrap">${p.title}</h2>
+                        
+                        <div class="pillar-content ${i===0 ? '' : 'hidden'} z-10 w-full bg-[#121212]/90 backdrop-blur-xl p-8 rounded-xl border border-white/10 mt-auto shadow-2xl">
+                            <h3 class="text-3xl font-black text-spotify-green mb-4">${p.title}</h3>
+                            <p class="text-lg text-gray-300 mb-8 font-medium leading-relaxed">${p.text}</p>
+                            <div class="border-t border-white/10 pt-6">
+                                <p class="text-sm font-bold text-spotify-subtext mb-3 flex items-center gap-2"><i data-lucide="help-circle" class="w-4 h-4"></i> ${p.q}</p>
+                                <div class="bg-black/50 p-4 rounded-lg">
+                                    <p class="text-base font-black text-white">Starter: <span class="text-spotify-green">${p.start}</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('') : '';
+
+                return `
+                    <div class="flex flex-col w-full h-full min-h-[75vh]">
+                        <h2 class="text-3xl font-black mb-8 text-white">${data.title || "Concepts"}</h2>
+                        <div class="w-full flex gap-4 flex-1">
+                            ${pillars}
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderBLogicGrammar(data) {
+                const rules = data.rules ? data.rules.map(r => `
+                    <div class="bg-[#181818] border border-[#282828] p-10 rounded-2xl hover:border-spotify-green transition duration-300 group shadow-lg">
+                        <div class="w-12 h-12 rounded-full bg-[#282828] flex items-center justify-center mb-6 group-hover:bg-spotify-green/20 transition">
+                            <i data-lucide="zap" class="w-6 h-6 text-spotify-subtext group-hover:text-spotify-green transition"></i>
+                        </div>
+                        <h3 class="text-3xl font-black text-white mb-4 group-hover:text-spotify-green transition">${r.rule}</h3>
+                        <p class="text-lg text-spotify-subtext leading-relaxed font-medium">${r.desc}</p>
+                    </div>
+                `).join('') : '';
+
+                return `
+                    <div class="flex flex-col items-center justify-center space-y-12 w-full max-w-5xl mx-auto min-h-[60vh]">
+                        <div class="text-center">
+                            <i data-lucide="book-open" class="w-16 h-16 text-spotify-green mx-auto mb-6"></i>
+                            <h2 class="text-5xl font-black tracking-tight">${data.title}</h2>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+                            ${rules}
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderBCategorization(data) {
+                // Drag and Drop Logic Implementation
+                window.catState = { completed: 0 };
+                
+                window.dragStart = function(ev, wordIndex) {
+                    ev.dataTransfer.setData("wordIndex", wordIndex);
+                    if (ev.target?.classList) {
+                        ev.target.classList.add('opacity-50', 'scale-95');
+                    }
+                };
+
+                window.dragEnd = function(ev) {
+                    if (ev.target?.classList) {
+                        ev.target.classList.remove('opacity-50', 'scale-95');
+                    }
+                };
+
+                window.allowDrop = function(ev) {
+                    ev.preventDefault();
+                    const bucket = ev.currentTarget;
+                    if(bucket?.classList && !bucket.classList.contains('bucket-over')) {
+                        bucket.classList.add('bucket-over');
+                    }
+                };
+
+                window.dragLeave = function(ev) {
+                    if (ev.currentTarget?.classList) {
+                        ev.currentTarget.classList.remove('bucket-over');
+                    }
+                };
+
+                window.drop = function(ev, bucketIndex) {
+                    ev.preventDefault();
+                    if (ev.currentTarget?.classList) {
+                        ev.currentTarget.classList.remove('bucket-over');
+                    }
+                    
+                    const wordIndex = ev.dataTransfer.getData("wordIndex");
+                    if (wordIndex === "" || wordIndex === null) return;
+
+                    if (!app.trackData || !app.trackData[app.currentIndex]) return;
+                    const correctBucket = app.trackData[app.currentIndex].mapping ? app.trackData[app.currentIndex].mapping[wordIndex] : -1;
+                    const wordEl = document.getElementById(`drag-word-${wordIndex}`);
+
+                    if (!wordEl?.classList) return;
+
+                    wordEl.classList.remove('opacity-50', 'scale-95');
+
+                    if(bucketIndex == correctBucket) {
+                        app.gainXP(20);
+                        wordEl.setAttribute('draggable', 'false');
+                        wordEl.classList.remove('hover:bg-[#3E3E3E]', 'cursor-pointer', 'draggable-word', 'bg-[#282828]');
+                        wordEl.classList.add('cursor-default', 'bg-spotify-green', 'text-black', 'border-transparent');
+                        
+                        const bucketContent = document.getElementById(`bucket-content-${bucketIndex}`);
+                        if (bucketContent) {
+                            bucketContent.appendChild(wordEl);
+                        }
+                        
+                        window.catState.completed++;
+                        if(data.items && window.catState.completed === data.items.length) {
+                            setTimeout(() => alert('Sector Cleared! Excellent Logic. +XP'), 600);
+                        }
+                    } else {
+                        app.takeDamage(10);
+                        if (ev.currentTarget?.classList) {
+                            ev.currentTarget.classList.add('pulse-red', 'border-red-500');
+                            setTimeout(() => ev.currentTarget?.classList.remove('pulse-red', 'border-red-500'), 500);
+                        }
+                    }
+                };
+
+                const words = data.items ? data.items.map((item, i) => `
+                    <div id="drag-word-${i}" class="draggable-word bg-[#282828] px-6 py-4 rounded-xl font-black text-lg transition-all duration-200 select-none shadow-lg border border-[#3E3E3E] hover:bg-[#3E3E3E]" draggable="true" ondragstart="dragStart(event, ${i})" ondragend="dragEnd(event)">
+                        ${item}
+                    </div>
+                `).join('') : '';
+
+                const buckets = data.buckets ? data.buckets.map((b, i) => `
+                    <div id="bucket-${i}" class="bg-[#181818] border-2 border-dashed border-[#535353] rounded-2xl p-8 flex flex-col items-center min-h-[250px] transition-all duration-300 shadow-inner" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event, ${i})">
+                        <div class="w-16 h-16 rounded-full bg-[#282828] flex items-center justify-center mb-4 pointer-events-none">
+                            <i data-lucide="inbox" class="w-8 h-8 text-spotify-subtext"></i>
+                        </div>
+                        <h3 class="text-2xl font-black text-white mb-2 pointer-events-none text-center">${b}</h3>
+                        <p class="text-sm font-bold text-spotify-subtext pointer-events-none mb-6">Drop here</p>
+                        <div id="bucket-content-${i}" class="flex flex-wrap justify-center gap-3 w-full pointer-events-none"></div>
+                    </div>
+                `).join('') : '';
+
+                return `
+                    <div class="flex flex-col items-center justify-center w-full max-w-6xl mx-auto space-y-12 min-h-[75vh]">
+                        <div class="text-center">
+                            <h2 class="text-4xl font-black mb-3">${data.title}</h2>
+                            <p class="text-lg text-spotify-subtext font-medium">Drag and drop the phrases into the correct sector.</p>
+                        </div>
+                        
+                        <div id="words-container" class="flex flex-wrap justify-center gap-4 min-h-[80px] w-full max-w-4xl bg-[#121212] p-6 rounded-2xl border border-[#282828]">
+                            ${words}
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 w-full">
+                            ${buckets}
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderBRhythmCheck(data) {
+                window.checkAnswer = function(index) {
+                    if (!app.trackData || !app.trackData[app.currentIndex]) return;
+                    const slideData = app.trackData[app.currentIndex];
+                    const btn = document.getElementById(`opt-${index}`);
+                    
+                    document.querySelectorAll('.rhythm-btn').forEach(b => { if(b) b.disabled = true; });
+                    
+                    if (!btn?.classList) return;
+
+                    if(index === slideData.correct) {
+                        btn.classList.replace('bg-[#282828]', 'bg-spotify-green');
+                        btn.classList.replace('text-white', 'text-black');
+                        btn.classList.add('scale-105');
+                        app.gainXP(50);
+                        const feedback = document.getElementById('rhythm-feedback');
+                        if (feedback) {
+                            feedback.innerHTML = `
+                                <div class="fade-in mt-8 bg-[#181818] p-6 rounded-xl border-l-4 border-spotify-green text-left flex gap-5 items-center shadow-2xl">
+                                    <div class="bg-spotify-green/20 p-3 rounded-full">
+                                        <i data-lucide="check-circle" class="w-8 h-8 text-spotify-green"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-black text-white text-xl">${slideData.successMsg}</p>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        lucide.createIcons();
+                    } else {
+                        btn.classList.replace('bg-[#282828]', 'bg-red-500');
+                        app.takeDamage(25);
+                        const feedback = document.getElementById('rhythm-feedback');
+                        if (feedback) {
+                            feedback.innerHTML = `
+                                <div class="fade-in mt-8 p-6 text-center bg-red-900/10 rounded-xl border border-red-500/30">
+                                    <p class="text-red-500 font-black text-xl mb-4">Missed the Beat!</p>
+                                    <button onclick="app.renderSlide()" class="text-sm font-bold uppercase tracking-widest text-spotify-subtext hover:text-white bg-[#181818] px-6 py-3 rounded-full border border-[#3E3E3E] transition">Try Again <i data-lucide="rotate-ccw" class="inline w-4 h-4 ml-1"></i></button>
+                                </div>
+                            `;
+                        }
+                        lucide.createIcons();
+                    }
+                };
+
+                const options = data.options ? data.options.map((opt, i) => `
+                    <button id="opt-${i}" onclick="checkAnswer(${i})" class="rhythm-btn w-full bg-[#282828] hover:bg-[#3E3E3E] text-white font-black py-6 px-8 rounded-2xl transition-all duration-300 border border-[#3E3E3E] hover:border-white/30 text-2xl shadow-lg">
+                        ${opt}
+                    </button>
+                `).join('') : '';
+
+                return `
+                    <div class="flex flex-col items-center justify-center w-full max-w-3xl mx-auto text-center min-h-[60vh]">
+                        <div class="mb-12 p-10 glass rounded-3xl w-full border border-[#282828] shadow-2xl relative overflow-hidden">
+                            <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-spotify-green/20 to-transparent"></div>
+                            <span class="text-spotify-green uppercase tracking-widest text-sm font-black mb-4 block flex items-center justify-center gap-2"><i data-lucide="swords" class="w-4 h-4"></i> Combat Drill</span>
+                            <h2 class="text-4xl md:text-5xl font-black leading-tight tracking-tight">${data.question}</h2>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                            ${options}
+                        </div>
+                        
+                        <div id="rhythm-feedback" class="w-full h-32"></div>
+                    </div>
+                `;
+            },
+
+            renderBDecisionStand(data) {
+                window.updateSliderValue = function(val) {
+                    const btn = document.getElementById('defend-btn');
+                    if(btn?.classList && btn.classList.contains('opacity-0')) {
+                        btn.classList.remove('opacity-0', 'translate-y-4');
+                    }
+                    
+                    const sliderValEl = document.getElementById('slider-val');
+                    if (sliderValEl) sliderValEl.innerText = `${val}%`;
+                    
+                    const track = document.getElementById('decision-track');
+                    if (track?.style) {
+                        const percentage = val;
+                        track.style.background = `linear-gradient(to right, #1DB954 ${percentage}%, #535353 ${percentage}%)`;
+                    }
+                    
+                    const thumb = document.getElementById('slider-thumb-visual');
+                    if (thumb?.style) {
+                        thumb.style.left = val + '%';
+                    }
+                };
+
+                return `
+                    <div class="flex flex-col items-center justify-center w-full max-w-4xl mx-auto text-center space-y-16 min-h-[60vh]">
+                        <div class="bg-[#181818] p-5 rounded-full border border-[#282828] shadow-lg">
+                            <i data-lucide="scale" class="w-12 h-12 text-spotify-green"></i>
+                        </div>
+                        <h2 class="text-4xl md:text-6xl font-black leading-tight tracking-tight max-w-3xl">${data.question}</h2>
+                        
+                        <div class="w-full bg-[#181818] p-12 rounded-3xl border border-[#282828] shadow-2xl relative">
+                            <div class="text-6xl font-black text-white mb-10 drop-shadow-[0_0_15px_rgba(29,185,84,0.3)]" id="slider-val">50%</div>
+                            
+                            <div class="relative w-full h-2 rounded-full bg-[#535353]" id="decision-track" style="background: linear-gradient(to right, #1DB954 50%, #535353 50%);">
+                                <input type="range" min="0" max="100" value="50" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" oninput="updateSliderValue(this.value)">
+                                <div class="pointer-events-none absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-white rounded-full shadow-[0_0_15px_rgba(0,0,0,0.5)] z-0 transition-all duration-75" style="left: 50%" id="slider-thumb-visual"></div>
+                            </div>
+                            
+                            <div class="flex justify-between w-full mt-8 text-sm font-black uppercase tracking-widest text-spotify-subtext">
+                                <span>${data.labels ? data.labels[0] : ''}</span>
+                                <span>${data.labels ? data.labels[1] : ''}</span>
+                            </div>
+                        </div>
+
+                        <button id="defend-btn" onclick="app.gainXP(100); this.innerHTML='<i data-lucide=\\'check\\' class=\\'w-6 h-6\\'></i> Stand Taken'; this.disabled=true; if(this.classList) this.classList.replace('bg-white', 'bg-spotify-green'); lucide.createIcons();" class="opacity-0 translate-y-4 transition-all duration-500 bg-white text-black font-black py-5 px-12 rounded-full hover:scale-105 flex items-center justify-center gap-3 text-xl shadow-xl">
+                            Defend Your Position
+                        </button>
+                    </div>
+                `;
+            },
+
+            renderBWrap(data) {
+                return `
+                    <div class="flex flex-col items-center justify-center text-center space-y-10 min-h-[60vh]">
+                        <div class="relative w-40 h-40 flex items-center justify-center mb-6">
+                            <div class="absolute inset-0 bg-spotify-green rounded-full opacity-20 animate-ping"></div>
+                            <div class="absolute inset-4 bg-spotify-green rounded-full opacity-40 blur-lg"></div>
+                            <i data-lucide="award" class="w-24 h-24 text-white relative z-10"></i>
+                        </div>
+                        <h1 class="text-6xl md:text-8xl font-black uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-spotify-subtext">${data.title}</h1>
+                        <p class="text-2xl font-medium text-spotify-subtext max-w-2xl leading-relaxed">${data.msg}</p>
+                        
+                        <div class="flex gap-8 mt-10">
+                            <div class="bg-[#181818] px-10 py-6 rounded-2xl border border-[#282828] text-center shadow-2xl">
+                                <p class="text-sm font-black text-spotify-subtext uppercase tracking-widest mb-2">Final HP</p>
+                                <p class="text-5xl font-black text-white">${app.hp}</p>
+                            </div>
+                            <div class="bg-[#181818] px-10 py-6 rounded-2xl border border-[#282828] text-center shadow-2xl border-b-4 border-b-spotify-green">
+                                <p class="text-sm font-black text-spotify-subtext uppercase tracking-widest mb-2">Total XP</p>
+                                <p class="text-5xl font-black text-spotify-green drop-shadow-[0_0_10px_rgba(29,185,84,0.5)]">${app.xp}</p>
+                            </div>
+                        </div>
+
+                        <button onclick="app.goHome()" class="mt-16 text-spotify-subtext font-bold hover:text-white transition flex items-center gap-2 bg-[#282828] px-8 py-4 rounded-full border border-[#3E3E3E] hover:bg-[#3E3E3E]">
+                            <i data-lucide="log-out" class="w-5 h-5"></i> Return to Dashboard
+                        </button>
+                    </div>
+                `;
+            }
+        };
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+
+    </script>
+</body>
+</html>
